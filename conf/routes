@@ -1,0 +1,13 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# https://www.playframework.com/documentation/latest/ScalaRouting
+# ~~~~
+
+GET     /api/v1/event/list          controllers.ApiController.list
+POST    /api/v1/event               controllers.ApiController.create
+GET     /api/v1/event/:id           controllers.ApiController.show(id: Long)
+POST    /api/v1/event/:id/vote      controllers.ApiController.vote(id: Long)
+GET     /api/v1/event/:id/results   controllers.ApiController.getResults(id: Long)
+
+# Map static resources from the /public folder to the /assets URL path
+GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
