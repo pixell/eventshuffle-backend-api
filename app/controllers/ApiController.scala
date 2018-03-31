@@ -1,11 +1,11 @@
 package controllers
 
 import javax.inject._
-import models.{EventDate, Vote}
+import models.{EventDate, EventResults, Vote}
 import play.api.libs.json._
 import play.api.mvc._
 import services.EventService
-import services.EventService.{NotFoundException, ServiceException}
+import services.EventService.ServiceException
 
 import scala.collection.SortedMap
 import scala.concurrent.{ExecutionContext, Future}
@@ -49,6 +49,7 @@ class ApiController @Inject()(eventService: EventService,
             }
           }
         )
+
       case _ => BadRequest("Body missing")
     }
   }
@@ -56,7 +57,7 @@ class ApiController @Inject()(eventService: EventService,
   def show(eventId: Long) = Action.async { implicit request =>
     eventService.get(eventId).map {
       _ match {
-        case Some(results) => showResults(results)
+        case Some(results) => resultsToJson(results)
         case None          => NotFound(s"No event found for ${eventId}")
       }
     }
@@ -72,15 +73,15 @@ class ApiController @Inject()(eventService: EventService,
           value => {
             eventService.vote(eventId, value)
               .map {
-                case Some(results) => showResults(results)
+                case Some(results) => resultsToJson(results)
                 case None          => NotFound(s"No event found for ${eventId}")
               }
               .recover {
-                case NotFoundException(message) => NotFound(message)
-                case ServiceException(message)  => BadRequest(message)
+                case ServiceException(message) => BadRequest(message)
               }
           }
         )
+
       case _ => BadRequest("Body missing")
     }
   }
@@ -88,11 +89,11 @@ class ApiController @Inject()(eventService: EventService,
   def getResults(eventId: Long) = Action.async { implicit request =>
     eventService.showResults(eventId).map {
       _ match {
-        case Some((event, votesPerDay)) =>
+        case Some(results) =>
           val response = Json.obj(
-            "id"            -> event.id,
-            "name"          -> event.name,
-            "suitableDates" -> votesToJson(votesPerDay)
+            "id"            -> results.event.id,
+            "name"          -> results.event.name,
+            "suitableDates" -> votesToJson(results.votesPerDay)
           )
 
           Ok(response)
@@ -102,13 +103,12 @@ class ApiController @Inject()(eventService: EventService,
     }
   }
 
-  private def showResults(results: EventService.ResultsResponse) = {
-    val (event, votesPerDay) = results
+  private def resultsToJson(results: EventResults) = {
     val response = Json.obj(
-      "id"    -> event.id,
-      "name"  -> event.name,
-      "dates" -> votesPerDay.keys.map(_.date),
-      "votes" -> votesToJson(votesPerDay)
+      "id"    -> results.event.id,
+      "name"  -> results.event.name,
+      "dates" -> results.votesPerDay.keys.map(_.date),
+      "votes" -> votesToJson(results.votesPerDay)
     )
 
     Ok(response)

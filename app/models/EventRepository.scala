@@ -21,7 +21,7 @@ class EventRepository extends Database
     } yield event
   }
 
-  def get(eventId: Long): DBIO[Option[(Event, SortedMap[EventDate, Seq[Vote]])]] = {
+  def get(eventId: Long): DBIO[Option[EventResults]] = {
     getWithVotes(eventId, datesOnlyWithAllVoters = false)
   }
 
@@ -29,7 +29,7 @@ class EventRepository extends Database
     Votes.insert ++= eventDateIds.toSeq.map(id => (id, voter))
   }
 
-  def showResults(eventId: Long): DBIO[Option[(Event, SortedMap[EventDate, Seq[Vote]])]] = {
+  def showResults(eventId: Long): DBIO[Option[EventResults]] = {
     getWithVotes(eventId, datesOnlyWithAllVoters = true)
   }
 
@@ -67,7 +67,7 @@ class EventRepository extends Database
       .as[(Long, String, Long, LocalDate, Option[Long], Option[String])]
       .map { rows =>
         rows.headOption.map { case (eventId, name, _, _, _, _) =>
-          (Event(eventId, name), rows.foldLeft(SortedMap.empty[EventDate, Seq[Vote]]) {
+          val votesPerDay =rows.foldLeft(SortedMap.empty[EventDate, Seq[Vote]]) {
             case (map, (_, _, eventDateId, date, Some(voteId), Some(voter))) =>
               val eventDate = EventDate(eventDateId, eventId, date)
               val votes = map.getOrElse(eventDate, Seq.empty)
@@ -79,7 +79,9 @@ class EventRepository extends Database
               map + (eventDate -> votes)
 
             case (map, _) => map
-          })
+          }
+
+          EventResults(Event(eventId, name), votesPerDay)
         }
       }
   }
