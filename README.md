@@ -13,7 +13,7 @@ Then you can start the application by executing
 sbt run
 ```
 
-When you see a row starting with `(Server started...)` API is available in `http://localhost:9000`. To exit, press `Ctrl+c``.
+When you see a row starting with `(Server started...)` API is available in `http://localhost:9000`. To exit, press `Ctrl+c`.
 
 **Note**: it will take a little more time the first time as it downloads few dependencies. Also the first request served by the application will compile all the sources and therefore it takes more time.
 
